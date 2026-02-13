@@ -93,6 +93,33 @@ npm run build
 npm start
 ```
 
+## 🚀 Vercelへのデプロイ
+
+### 1. Vercelプロジェクトの作成
+
+Vercelダッシュボードで新しいプロジェクトを作成し、このリポジトリを接続します。
+
+### 2. 環境変数の設定
+
+Vercelダッシュボードで**Settings → Environment Variables**に移動し、以下の環境変数を追加してください：
+
+| 環境変数名 | 説明 |
+|-----------|------|
+| `NEXT_PUBLIC_SUPABASE_URL` | SupabaseプロジェクトのURL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabaseの匿名キー |
+
+**環境変数の取得方法：**
+1. [Supabaseダッシュボード](https://app.supabase.com)にログイン
+2. プロジェクトを選択
+3. **Settings → API**に移動
+4. **Project URL**と**anon public**キーをコピー
+
+### 3. デプロイ
+
+環境変数を設定した後、Vercelで**Deploy**ボタンをクリックしてデプロイを開始します。
+
+**重要:** 環境変数を設定せずにデプロイすると、ビルドエラーが発生します。必ず事前に設定してください。
+
 ## 🗄️ データベーススキーマ
 
 Supabaseマイグレーションは`supabase/migrations/`に配置されています。

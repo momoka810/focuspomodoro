@@ -16,7 +16,7 @@ import {
 interface Reflection {
   id: string;
   reflection_text: string;
-  ai_feedback: string;
+  ai_feedback: string | null;
   session_date: string;
   created_at: string;
 }

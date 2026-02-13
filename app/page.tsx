@@ -17,7 +17,7 @@ import { GoalsManager } from '@/components/goals-manager';
 import { ReflectionDialog } from '@/components/reflection-dialog';
 import { ReflectionCalendar } from '@/components/reflection-calendar';
 import { SessionType, PomodoroSession, FocusAnalytics } from '@/lib/types';
-import { supabase } from '@/lib/supabase';
+import { supabase, Database } from '@/lib/supabase';
 
 function HomeContent() {
   const { t } = useLanguage();
@@ -41,15 +41,18 @@ function HomeContent() {
     };
     setSessions((prev) => [...prev, newSession]);
 
-    const sessionType = type === 'focus' ? 'work' : type === 'break' ? 'short_break' : 'long_break';
+    const sessionType: Database['public']['Tables']['pomodoro_sessions']['Row']['session_type'] =
+      type === 'focus' ? 'work' : type === 'break' ? 'short_break' : 'long_break';
     const durationMinutes = Math.floor(duration / 60);
 
-    await supabase.from('pomodoro_sessions').insert({
+    const insertData: Database['public']['Tables']['pomodoro_sessions']['Insert'] = {
       user_id: user.id,
       session_type: sessionType,
       duration_minutes: durationMinutes,
       completed_at: new Date().toISOString(),
-    });
+    };
+
+    await supabase.from('pomodoro_sessions').insert(insertData);
 
     if (type === 'focus') {
       setShowReflectionDialog(true);
