@@ -14,23 +14,27 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export function UserProfile() {
-  const { user, signOut } = useAuth();
+  const { user, isGuest, signOut } = useAuth();
   const { language } = useLanguage();
 
   const text = {
     ja: {
       account: 'アカウント',
       signOut: 'ログアウト',
+      guest: 'ゲスト',
+      guestMode: 'ゲストモード',
     },
     en: {
       account: 'Account',
       signOut: 'Sign Out',
+      guest: 'Guest',
+      guestMode: 'Guest Mode',
     },
   };
 
   const t = text[language];
 
-  if (!user) return null;
+  if (!user && !isGuest) return null;
 
   return (
     <DropdownMenu>
@@ -43,7 +47,7 @@ export function UserProfile() {
         <DropdownMenuLabel>{t.account}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem disabled className="text-xs text-muted-foreground">
-          {user.email}
+          {isGuest ? t.guestMode : user?.email}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={signOut}>

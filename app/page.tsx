@@ -18,10 +18,12 @@ import { ReflectionDialog } from '@/components/reflection-dialog';
 import { ReflectionCalendar } from '@/components/reflection-calendar';
 import { SessionType, PomodoroSession, FocusAnalytics } from '@/lib/types';
 import { supabase, Database } from '@/lib/supabase';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 
 function HomeContent() {
   const { t } = useLanguage();
-  const { user, loading } = useAuth();
+  const { user, loading, isGuest } = useAuth();
+  const [localSessions, setLocalSessions] = useLocalStorage<PomodoroSession[]>('pomodoro-sessions', []);
   const [currentTask, setCurrentTask] = useState('');
   const [sessions, setSessions] = useState<PomodoroSession[]>([]);
   const [timerProgress, setTimerProgress] = useState({ remaining: 1500, total: 1500 });
@@ -29,8 +31,6 @@ function HomeContent() {
   const [showReflectionDialog, setShowReflectionDialog] = useState(false);
 
   const handleSessionComplete = useCallback(async (type: SessionType, duration: number) => {
-    if (!user) return;
-
     const newSession: PomodoroSession = {
       id: Date.now().toString(),
       taskName: currentTask || t('task.untitled'),
@@ -41,25 +41,34 @@ function HomeContent() {
     };
     setSessions((prev) => [...prev, newSession]);
 
-    const sessionType: Database['public']['Tables']['pomodoro_sessions']['Row']['session_type'] =
-      type === 'focus' ? 'work' : type === 'break' ? 'short_break' : 'long_break';
-    const durationMinutes = Math.floor(duration / 60);
+    if (isGuest) {
+      setLocalSessions((prev) => [...prev, newSession]);
+    } else if (user) {
+      const sessionType: Database['public']['Tables']['pomodoro_sessions']['Row']['session_type'] =
+        type === 'focus' ? 'work' : type === 'break' ? 'short_break' : 'long_break';
+      const durationMinutes = Math.floor(duration / 60);
 
-    const insertData: Database['public']['Tables']['pomodoro_sessions']['Insert'] = {
-      user_id: user.id,
-      session_type: sessionType,
-      duration_minutes: durationMinutes,
-      completed_at: new Date().toISOString(),
-    };
+      const insertData: Database['public']['Tables']['pomodoro_sessions']['Insert'] = {
+        user_id: user.id,
+        session_type: sessionType,
+        duration_minutes: durationMinutes,
+        completed_at: new Date().toISOString(),
+      };
 
-    await supabase.from('pomodoro_sessions').insert(insertData);
+      await supabase.from('pomodoro_sessions').insert(insertData);
+    }
 
     if (type === 'focus') {
       setShowReflectionDialog(true);
     }
-  }, [currentTask, t, user]);
+  }, [currentTask, t, user, isGuest, setLocalSessions]);
 
   useEffect(() => {
+    if (isGuest) {
+      setSessions(localSessions);
+      return;
+    }
+
     if (!user) return;
 
     const loadSessions = async () => {
@@ -84,7 +93,7 @@ function HomeContent() {
     };
 
     loadSessions();
-  }, [user, t]);
+  }, [user, isGuest, localSessions, t]);
 
   const handleTimerTick = useCallback((remainingSeconds: number, totalSeconds: number) => {
     setTimerProgress({ remaining: remainingSeconds, total: totalSeconds });
@@ -138,7 +147,7 @@ function HomeContent() {
     );
   }
 
-  if (!user) {
+  if (!user && !isGuest) {
     return <AuthForm />;
   }
 
@@ -180,7 +189,7 @@ function HomeContent() {
             <ReportsDashboard />
             <GoalsManager />
           </div>
-          <ReflectionCalendar userId={user.id} />
+          {user && <ReflectionCalendar userId={user.id} />}
           <TaskList />
         </div>
 
@@ -189,11 +198,13 @@ function HomeContent() {
         </div>
       </div>
 
-      <ReflectionDialog
-        open={showReflectionDialog}
-        onOpenChange={setShowReflectionDialog}
-        userId={user.id}
-      />
+      {user && (
+        <ReflectionDialog
+          open={showReflectionDialog}
+          onOpenChange={setShowReflectionDialog}
+          userId={user.id}
+        />
+      )}
     </div>
   );
 }

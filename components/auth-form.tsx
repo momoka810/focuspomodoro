@@ -14,7 +14,7 @@ export function AuthForm() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, continueAsGuest } = useAuth();
   const { language } = useLanguage();
 
   const text = {
@@ -33,6 +33,9 @@ export function AuthForm() {
       invalidCredentials: 'メールアドレスまたはパスワードが正しくありません',
       emailAlreadyExists: 'このメールアドレスは既に登録されています',
       networkError: 'ネットワークエラーが発生しました。環境変数とSupabaseの設定を確認してください。',
+      continueAsGuest: 'ゲストとして続ける',
+      guestNote: 'データはローカルに保存されます',
+      or: 'または',
     },
     en: {
       signIn: 'Sign In',
@@ -49,6 +52,9 @@ export function AuthForm() {
       invalidCredentials: 'Invalid email or password',
       emailAlreadyExists: 'Email already exists',
       networkError: 'Network error occurred. Please check your environment variables and Supabase configuration.',
+      continueAsGuest: 'Continue as Guest',
+      guestNote: 'Data will be saved locally',
+      or: 'or',
     },
   };
 
@@ -144,6 +150,32 @@ export function AuthForm() {
               </button>
             </div>
           </form>
+
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  {t.or}
+                </span>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full mt-4"
+              onClick={continueAsGuest}
+              disabled={loading}
+            >
+              {t.continueAsGuest}
+            </Button>
+            <p className="text-center text-xs text-muted-foreground mt-2">
+              {t.guestNote}
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>

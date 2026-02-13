@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useLanguage } from '@/lib/language-context';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 
 interface Goal {
   id: string;
@@ -22,8 +23,9 @@ interface Goal {
 
 export function GoalsManager() {
   const { language } = useLanguage();
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [localGoals, setLocalGoals] = useLocalStorage<Goal[]>('goals', []);
   const [isAdding, setIsAdding] = useState(false);
   const [newGoalType, setNewGoalType] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [newGoalTarget, setNewGoalTarget] = useState('8');
@@ -62,6 +64,11 @@ export function GoalsManager() {
   const t = text[language];
 
   useEffect(() => {
+    if (isGuest) {
+      setGoals(localGoals.map(goal => ({ ...goal, current_progress: 0 })));
+      return;
+    }
+
     if (!user) return;
 
     const loadGoals = async () => {
@@ -96,7 +103,7 @@ export function GoalsManager() {
     };
 
     loadGoals();
-  }, [user]);
+  }, [user, isGuest, localGoals]);
 
   const addGoal = async () => {
     if (!user) return;

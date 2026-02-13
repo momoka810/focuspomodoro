@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card';
 import { useLanguage } from '@/lib/language-context';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 
 interface Task {
   id: string;
@@ -19,8 +20,9 @@ interface Task {
 
 export function TaskList() {
   const { language } = useLanguage();
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [localTasks, setLocalTasks] = useLocalStorage<Task[]>('tasks', []);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [isAdding, setIsAdding] = useState(false);
 
@@ -48,6 +50,11 @@ export function TaskList() {
   const t = text[language];
 
   useEffect(() => {
+    if (isGuest) {
+      setTasks(localTasks);
+      return;
+    }
+
     if (!user) return;
 
     const loadTasks = async () => {
@@ -63,10 +70,27 @@ export function TaskList() {
     };
 
     loadTasks();
-  }, [user]);
+  }, [user, isGuest, localTasks]);
 
   const addTask = async () => {
-    if (!newTaskTitle.trim() || !user) return;
+    if (!newTaskTitle.trim()) return;
+
+    const newTask: Task = {
+      id: Date.now().toString(),
+      title: newTaskTitle.trim(),
+      completed: false,
+      created_at: new Date().toISOString(),
+    };
+
+    if (isGuest) {
+      setLocalTasks([newTask, ...localTasks]);
+      setTasks([newTask, ...tasks]);
+      setNewTaskTitle('');
+      setIsAdding(false);
+      return;
+    }
+
+    if (!user) return;
 
     const { data, error } = await supabase
       .from('tasks')
@@ -86,6 +110,16 @@ export function TaskList() {
   };
 
   const toggleTask = async (taskId: string, completed: boolean) => {
+    const updatedTasks = tasks.map((task) =>
+      task.id === taskId ? { ...task, completed: !completed } : task
+    );
+    setTasks(updatedTasks);
+
+    if (isGuest) {
+      setLocalTasks(updatedTasks);
+      return;
+    }
+
     const { error } = await supabase
       .from('tasks')
       .update({
@@ -94,21 +128,27 @@ export function TaskList() {
       })
       .eq('id', taskId);
 
-    if (!error) {
-      setTasks(tasks.map((task) =>
-        task.id === taskId ? { ...task, completed: !completed } : task
-      ));
+    if (error) {
+      setTasks(tasks);
     }
   };
 
   const deleteTask = async (taskId: string) => {
+    const filteredTasks = tasks.filter((task) => task.id !== taskId);
+    setTasks(filteredTasks);
+
+    if (isGuest) {
+      setLocalTasks(filteredTasks);
+      return;
+    }
+
     const { error } = await supabase
       .from('tasks')
       .delete()
       .eq('id', taskId);
 
-    if (!error) {
-      setTasks(tasks.filter((task) => task.id !== taskId));
+    if (error) {
+      setTasks(tasks);
     }
   };
 
