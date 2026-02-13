@@ -95,11 +95,37 @@ npm start
 
 ## 🚀 Vercelへのデプロイ
 
-### 1. Vercelプロジェクトの作成
+### 1. Supabaseの設定（重要）
+
+デプロイ前に、Supabaseで認証用のURLを設定する必要があります：
+
+1. **[Supabaseダッシュボード](https://app.supabase.com)** にアクセス
+2. プロジェクトを選択
+3. 左サイドバーから **Authentication** → **URL Configuration** を選択
+4. 以下を設定：
+
+   **Site URL:**
+   ```
+   https://your-app.vercel.app
+   ```
+   （デプロイ後のVercel URLに置き換えてください）
+
+   **Redirect URLs:**
+   ```
+   http://localhost:3000/**
+   https://your-app.vercel.app/**
+   https://*.vercel.app/**
+   ```
+
+5. **Save**をクリック
+
+**注意:** この設定をしないと、ログイン時に「Failed to fetch」エラーが発生します。
+
+### 2. Vercelプロジェクトの作成
 
 Vercelダッシュボードで新しいプロジェクトを作成し、このリポジトリを接続します。
 
-### 2. 環境変数の設定
+### 3. 環境変数の設定
 
 Vercelダッシュボードで**Settings → Environment Variables**に移動し、以下の環境変数を追加してください：
 
@@ -114,11 +140,18 @@ Vercelダッシュボードで**Settings → Environment Variables**に移動し
 3. **Settings → API**に移動
 4. **Project URL**と**anon public**キーをコピー
 
-### 3. デプロイ
+### 4. デプロイ
 
 環境変数を設定した後、Vercelで**Deploy**ボタンをクリックしてデプロイを開始します。
 
-**重要:** 環境変数を設定せずにデプロイすると、ビルドエラーが発生します。必ず事前に設定してください。
+### 5. デプロイ後の設定
+
+デプロイが完了したら：
+1. Vercelから発行されたURLを確認
+2. **手順1**のSupabase設定に戻り、`your-app.vercel.app`を実際のURLに更新
+3. Vercelで再デプロイ（必要に応じて）
+
+**重要:** 環境変数を設定せずにデプロイすると、ビルドエラーが発生します。また、SupabaseのURL設定をしないと認証が機能しません。
 
 ## 🗄️ データベーススキーマ
 

@@ -32,6 +32,7 @@ export function AuthForm() {
       passwordMin: 'パスワードは6文字以上で入力してください',
       invalidCredentials: 'メールアドレスまたはパスワードが正しくありません',
       emailAlreadyExists: 'このメールアドレスは既に登録されています',
+      networkError: 'ネットワークエラーが発生しました。環境変数とSupabaseの設定を確認してください。',
     },
     en: {
       signIn: 'Sign In',
@@ -47,6 +48,7 @@ export function AuthForm() {
       passwordMin: 'Password must be at least 6 characters',
       invalidCredentials: 'Invalid email or password',
       emailAlreadyExists: 'Email already exists',
+      networkError: 'Network error occurred. Please check your environment variables and Supabase configuration.',
     },
   };
 
@@ -63,18 +65,25 @@ export function AuthForm() {
       return;
     }
 
-    const { error } = isSignUp
-      ? await signUp(email, password)
-      : await signIn(email, password);
+    try {
+      const { error } = isSignUp
+        ? await signUp(email, password)
+        : await signIn(email, password);
 
-    if (error) {
-      if (error.message.includes('Invalid login credentials')) {
-        setError(t.invalidCredentials);
-      } else if (error.message.includes('already registered')) {
-        setError(t.emailAlreadyExists);
-      } else {
-        setError(error.message);
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          setError(t.invalidCredentials);
+        } else if (error.message.includes('already registered')) {
+          setError(t.emailAlreadyExists);
+        } else if (error.message.includes('fetch')) {
+          setError(t.networkError);
+        } else {
+          setError(error.message);
+        }
       }
+    } catch (err) {
+      setError(t.networkError);
+      console.error('Auth error:', err);
     }
 
     setLoading(false);
